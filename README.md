@@ -1,12 +1,12 @@
 # Algorithm-Assignment2
 
-*Nada Samir Hanfy Ahmed 
+* Nada Samir Hanfy Ahmed 
 20230441
 
-*Daad Amar Osman
+* Daad Amar Osman
 20230779
 
-*Nourhan Aly Zakaria 
+* Nourhan Aly Zakaria 
 20230453
 
 *Asrar Abdelgaber Osman
