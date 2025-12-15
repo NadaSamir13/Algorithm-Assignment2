@@ -39,7 +39,7 @@ private:
     int hash1(int key){
         double A = 0.6180339887;
         double m= (key*A) - floor(key*A);
-        return floor(101* m);
+        return floor(tableSize* m);
     }
 
     int hash2(int key){
