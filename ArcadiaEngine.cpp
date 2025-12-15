@@ -24,22 +24,77 @@ using namespace std;
 
 class ConcretePlayerTable : public PlayerTable {
 private:
-    // TODO: Define your data structures here
-    // Hint: You'll need a hash table with double hashing collision resolution
+
+    static const int tableSize = 101;
+    struct Entry {
+        int playerId;
+        string playerName;
+        bool isBusy= false;
+        bool isDeleted =false;
+
+    };
+
+    Entry hashTable [tableSize];
+
+    int hash1(int key){
+        double A = 0.6180339887;
+        double m= (key*A) - floor(key*A);
+        return floor(101* m);
+    }
+
+    int hash2(int key){
+        return 7 -(key % 7);
+    }
 
 public:
     ConcretePlayerTable() {
-        // TODO: Initialize your hash table
+        for(int i=0;i<tableSize;i++){
+            hashTable[i].playerId= INT_MIN;
+            hashTable[i].playerName="";
+            hashTable[i].isBusy=false;
+            hashTable[i].isDeleted=false;
+        }
+
     }
 
     void insert(int playerID, string name) override {
-        // TODO: Implement double hashing insert
-        // Remember to handle collisions using h1(key) + i * h2(key)
+
+        int j=0;
+        int key;
+        while(j < tableSize){
+            key = (hash1(playerID) + j*hash2(playerID)) %tableSize;
+
+            if(!hashTable[key].isBusy || hashTable[key].isDeleted){
+                hashTable[key].playerId = playerID;
+                hashTable[key].playerName= name;
+                hashTable[key].isBusy=true;
+                hashTable[key].isDeleted=false;
+                return;
+            }
+
+            if(hashTable[key].playerId == playerID){
+                hashTable[key].playerName=name;
+                return;
+            }
+            j++;
+        }
+        cout <<"Sorry: Table is full"<<endl;
+
     }
 
     string search(int playerID) override {
-        // TODO: Implement double hashing search
-        // Return "" if player not found
+        int j=0;int key;
+        while(j < tableSize){
+            key = (hash1(playerID) + j*hash2(playerID))%tableSize;
+            if(hashTable[key].playerId == playerID && !hashTable[key].isDeleted){
+                return hashTable[key].playerName;
+            }
+            if(!hashTable[key].isBusy){
+                return "";
+            }
+            j++;
+
+        }
         return "";
     }
 };
@@ -164,15 +219,16 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
 // =========================================================
 
 extern "C" {
-    PlayerTable* createPlayerTable() { 
-        return new ConcretePlayerTable(); 
+    PlayerTable* createPlayerTable() {
+        return new ConcretePlayerTable();
     }
 
-    Leaderboard* createLeaderboard() { 
-        return new ConcreteLeaderboard(); 
+    Leaderboard* createLeaderboard() {
+        return new ConcreteLeaderboard();
     }
 
-    AuctionTree* createAuctionTree() { 
-        return new ConcreteAuctionTree(); 
+    AuctionTree* createAuctionTree() {
+        return new ConcreteAuctionTree();
     }
 }
+
