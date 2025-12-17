@@ -37,9 +37,7 @@ private:
     Entry hashTable [tableSize];
 
     int hash1(int key){
-        double A = 0.6180339887;
-        double m= (key*A) - floor(key*A);
-        return floor(tableSize* m);
+        return key%tableSize;
     }
 
     int hash2(int key){
@@ -78,7 +76,7 @@ public:
             }
             j++;
         }
-        cout <<"Sorry: Table is full"<<endl;
+        cout <<"Table is full"<<endl;
 
     }
 
