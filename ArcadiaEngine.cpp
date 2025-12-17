@@ -103,26 +103,111 @@ public:
 
 class ConcreteLeaderboard : public Leaderboard {
 private:
-    // TODO: Define your skip list node structure and necessary variables
-    // Hint: You'll need nodes with multiple forward pointers
+    struct SNode {
+        int playID;
+        int score;
+        SNode** forward;
+        int nodeL;
+
+        SNode(int lev, int playerID, int score) {
+            this->playID = playerID;
+            this->score = score;
+            this->nodeL = lev;
+            forward = new SNode*[lev + 1];
+            for (int j = 0; j <= lev; ++j) {
+                forward[j] = nullptr;
+            }
+        }
+
+        ~SNode() {
+            delete[] forward;
+        }
+    };
+
+    static const int MAX_LEVEL = 16;
+    static constexpr double P = 0.5;
+
+    SNode* head;
+    int lev;
+
+    int randomLevel() {
+        int lvl = 0;
+        while ((rand() / (double)RAND_MAX) < P && lvl < MAX_LEVEL) {
+            ++lvl;
+        }
+        return lvl;
+    }
 
 public:
     ConcreteLeaderboard() {
-        // TODO: Initialize your skip list
+        srand((unsigned)time(nullptr));
+        lev = 0;
+        head = new SNode(MAX_LEVEL, -1, INT_MAX); // dummy head
     }
 
-    void addScore(int playerID, int score) override {
-        // TODO: Implement skip list insertion
-        // Remember to maintain descending order by score
+    void addScore(int playerID, int sco) override {
+        SNode* upd[MAX_LEVEL + 1];
+        SNode* curr = head;
+
+        for (int j = lev; j >= 0; --j) {
+            while (curr->forward[j] != nullptr &&
+                   (curr->forward[j]->score > sco ||
+                    (curr->forward[j]->score == sco &&
+                     curr->forward[j]->playID < playerID))) {
+                curr = curr->forward[j];
+            }
+            upd[j] = curr;
+        }
+
+        int newLevel = randomLevel();
+        if (newLevel > lev) {
+            for (int j = lev + 1; j <= newLevel; ++j) upd[j] = head;
+            lev = newLevel;
+        }
+
+        SNode* newNode = new SNode(newLevel, playerID, sco);
+        for (int j = 0; j <= newLevel; ++j) {
+            newNode->forward[j] = upd[j]->forward[j];
+            upd[j]->forward[j] = newNode;
+        }
     }
 
     void removePlayer(int playerID) override {
-        // TODO: Implement skip list deletion
+        SNode* upd[MAX_LEVEL + 1];
+        SNode* curr = head;
+
+        for (int j = lev; j >= 0; --j) {
+            while (curr->forward[j] != nullptr &&
+                   curr->forward[j]->playID < playerID) {
+                curr = curr->forward[j];
+            }
+            upd[j] = curr;
+        }
+
+        curr = curr->forward[0];
+        if (curr == nullptr || curr->playID != playerID) return;
+
+        for (int j = 0; j <= lev; ++j) {
+            if (upd[j]->forward[j] != curr) break;
+            upd[j]->forward[j] = curr->forward[j];
+        }
+        delete curr;
+
+        while (lev > 0 && head->forward[lev] == nullptr) {
+            lev--;
+        }
     }
 
     vector<int> getTopN(int n) override {
-        // TODO: Return top N player IDs in descending score order
-        return {};
+        vector<int> res;
+        SNode* curr = head->forward[0];
+        int count = 0;
+        while (curr != nullptr && count < n) {
+            res.push_back(curr->playID);
+            curr = curr->forward[0];
+            count++;
+        }
+        return res;
     }
 };
 
