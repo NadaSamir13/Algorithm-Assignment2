@@ -157,14 +157,51 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+
+    int coins_sum = 0;
+    for (int coin : coins) {
+        coins_sum += coin;
+    }
+    int half_sum = coins_sum / 2;
+
+    vector<bool> possible_sum(half_sum + 1, false);
+    possible_sum[0] = true;
+
+    for (int i = 0; i < n; i++) {
+        for (int j = half_sum; j >= coins[i]; j--) {
+            if (possible_sum[j - coins[i]]) {
+                possible_sum[j] = true;
+            }
+        }
+    }
+    int subset_sum = 0;
+    for (int i = half_sum; i >= 0; i--) {
+        if (possible_sum[i]) {
+            subset_sum = i;
+            break;
+        }
+    }
+    int difference = coins_sum - 2 * subset_sum;
+    return difference;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
     // TODO: Implement 0/1 Knapsack using DP
     // items = {weight, value} pairs
     // Return maximum value achievable within capacity
-    return 0;
+
+    int n = items.size();
+    vector<int> max_value (capacity + 1, 0);
+
+    for (int i = 0 ; i < n ; i++) {
+        int weight = items[i].first;
+        int value = items[i].second;
+
+        for (int curr_cap = capacity; curr_cap >= weight; curr_cap --) {
+            max_value[curr_cap] = max(max_value[curr_cap], max_value[curr_cap - weight] + value);
+        }
+    }
+    return max_value [capacity];
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
@@ -172,7 +209,26 @@ long long InventorySystem::countStringPossibilities(string s) {
     // Rules: "uu" can be decoded as "w" or "uu"
     //        "nn" can be decoded as "m" or "nn"
     // Count total possible decodings
-    return 0;
+
+    const long long mod = 1000000007;
+    int text_length = s.length();
+    if (text_length == 0) return 1;
+
+    vector<long long> ways_num(text_length + 1, 0);
+    ways_num[0] = 1;
+
+    for (int i = 1; i <= text_length; i++) {
+        ways_num[i] = ways_num[i - 1];
+
+        if (i >= 2) {
+            string char_pairs = s.substr(i - 2, 2);
+            if (char_pairs == "uu" || char_pairs == "nn") {
+                ways_num[i] = (ways_num[i] + ways_num[i - 2]) % mod;
+            }
+        }
+        ways_num[i] %= mod ;
+    }
+    return ways_num[text_length];
 }
 
 // =========================================================
