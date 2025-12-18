@@ -213,22 +213,305 @@ public:
 
 class ConcreteAuctionTree : public AuctionTree {
 private:
-    // TODO: Define your Red-Black Tree node structure
-    // Hint: Each node needs: id, price, color, left, right, parent pointers
+    enum Node_color {red,black};
+    struct Node{
+        int id;
+        int price;
+        Node_color color;
+        Node* left;
+        Node* right;
+        Node* p;
 
+        Node(int itemID,int itemPR):id(itemID),price(itemPR),color(red),left(nullptr),
+        right(nullptr),p(nullptr){}
+    };
+    Node* root;
+    Node* NIL;
+    //helper functions
+    void rotate_left(Node* A){
+        Node* B = A->right;
+        A->right = B->left;
+        //make A the parent of B left
+        if (B->left != NIL) B->left->p = A;
+        //give A's parent to B
+        B->p = A->p;
+        if(A->p == NIL){
+            root = B;
+        }else if (A == A->p->left){
+            A->p->left = B;
+        }else{
+            A->p->right = B;
+        }
+        B->left = A;
+        A->p =B;
+    }
+    void rotate_right(Node* A){
+        Node* B = A->left;
+        A->left = B->right;
+        //make A the parent of B right
+        if (B->right != NIL) B->right->p = A;
+        //give A's parent to B
+        B->p = A->p;
+        if(A->p == NIL){
+            root = B;
+        }else if (A == A->p->right){
+            A->p->right = B;
+        }else{
+            A->p->left = B;
+        }
+        B->right = A;
+        A->p =B;
+    }
+    Node* searchById(int id){
+        Node* current = root;
+        while(id != current->id && current != NIL){
+            if (id < current->id){
+                current= current->left;
+            }else{
+                current=current->right;
+            }
+        }
+        return current;
+    }
+    void deleteTree(Node* node){
+        if (node != NIL && node != nullptr){
+            deleteTree(node->right);
+            deleteTree(node->left);
+            delete NIL;
+        }
+    }
+    void insertRecolor(Node* A){
+        while (A->p->color == red){
+            if (A->p == A->p->p->left){
+                Node* B = A->p->p->right; //uncle
+
+                // Case 1: Uncle is RED
+                if (B->color == red) {
+                    A->p->color = black;
+                    B->color = black;
+                    A->p->p->color = red;
+                    A = A->p->p;
+                } else {
+                    // Case 2: A is right child
+                    if (A == A->p->right) {
+                        A = A->p;
+                        rotate_left(A);
+                    }
+                    // Case 3: A is left child
+                    A->p->color = black;
+                    A->p->p->color = red;
+                    rotate_right(A->p->p);
+                }
+
+            } else{
+                // parent is right child
+                Node* B = A->p->p->left;  // Uncle
+
+                // Case 1: Uncle is RED
+                if (B->color == red) {
+                    A->p->color = black;
+                    B->color = black;
+                    A->p->p->color = red;
+                    A = A->p->p;
+                } else {
+                    // Case 2: A is left child
+                    if (A == A->p->left) {
+                        A = A->p;
+                        rotate_right(A);
+                    }
+                    // Case 3: A is right child
+                    A->p->color = black;
+                    A->p->p->color = red;
+                    rotate_left(A->p->p);
+                }
+            }
+        }
+        root->color = black;
+    }
+    void move(Node* a, Node* b){
+        if (a->p == NIL) {
+            root = b;
+        } else if (a == a->p->left) {
+            a->p->left = b;
+        } else {
+            a->p->right = b;
+        }
+        b->p = a->p;
+    }
+    Node* minimum(Node* node){
+        while (node->left != NIL) {
+            node = node->left;
+        }
+        return node;
+    }
+    void deleteRecolor(Node* A){
+        while (A != root && A->color == black) {
+            if (A == A->p->left) {
+                Node* B = A->p->right;  // Sibling
+
+                // Case 1: Sibling is RED
+                if (B->color == red) {
+                    B->color = black;
+                    A->p->color = red;
+                    rotate_left(A->p);
+                    B = A->p->right;
+                }
+
+                // Case 2: Both of sibling's children are BLACK
+                if (B->left->color == black && B->right->color == black) {
+                    B->color = red;
+                    A = A->p;
+                } else {
+                    // Case 3: Sibling's right child is BLACK, left child is RED
+                    if (B->right->color == black) {
+                        B->left->color = black;
+                        B->color = red;
+                        rotate_right(B);
+                        B = A->p->right;
+                    }
+
+                    // Case 4: Sibling's right child is RED
+                    B->color = A->p->color;
+                    A->p->color = black;
+                    B->right->color = black;
+                    rotate_left(A->p);
+                    A = root;  // Terminate the loop
+                }
+            } else {
+                // A is right child)
+                Node* B = A->p->left;  // Sibling
+
+                // Case 1: Sibling is RED
+                if (B->color == red) {
+                    B->color = black;
+                    A->p->color = red;
+                    rotate_right(A->p);
+                    B = A->p->left;
+                }
+
+                // Case 2: Both of sibling's children are BLACK
+                if (B->right->color == black && B->left->color == black) {
+                    B->color = red;
+                    A = A->p;
+                } else {
+                    // Case 3: Sibling's left child is BLACK, right child is RED
+                    if (B->left->color == black) {
+                        B->right->color = black;
+                        B->color = red;
+                        rotate_left(B);
+                        B = A->p->left;
+                    }
+
+                    // Case 4: Sibling's left child is RED
+                    B->color = A->p->color;
+                    A->p->color = black;
+                    B->left->color = black;
+                    rotate_right(A->p);
+                    A = root;  // Terminate the loop
+                }
+            }
+        }
+
+        // Ensure A is black
+        A->color = black;
+    }
+    
 public:
     ConcreteAuctionTree() {
         // TODO: Initialize your Red-Black Tree
+        NIL = new Node(0,0);
+        NIL->color = black;
+        NIL->left = nullptr;
+        NIL->right = nullptr;
+        NIL->p = nullptr;
+        root = NIL;
+
     }
 
     void insertItem(int itemID, int price) override {
-        // TODO: Implement Red-Black Tree insertion
-        // Remember to maintain RB-Tree properties with rotations and recoloring
+
+        Node* C = new Node(itemID,price);
+        C->left = NIL;
+        C->right = NIL;
+        C->p = NIL;
+
+        Node* B = NIL;
+        Node* A = root;
+
+        while (A != NIL){
+            B = A;
+            if (C->id < A->id){
+                A = A->left;
+            }else{
+                A = A->right;
+            }
+        }
+
+        C->p = B;
+        if (B == NIL){
+            root = C;
+        }else if(C->id < B->id){
+            B->left = C;
+        }else{
+            B->right = C;
+        }
+        C->color = red;
+        insertRecolor(C);
     }
 
     void deleteItem(int itemID) override {
-        // TODO: Implement Red-Black Tree deletion
-        // This is complex - handle all cases carefully
+
+        Node* A = searchById(itemID);
+        if (A == NIL) {
+            return;  // Item not found
+        }
+
+        Node* B = A;
+        Node* C;
+        Node_color yOriginalColor = B->color;
+
+        // Case 1: A has no left child
+        if (A->left == NIL) {
+            C = A->right;
+            move(A, A->right);
+        }
+            // Case 2: A has no right child
+        else if (A->right == NIL) {
+            C = A->left;
+            move(A, A->left);
+        }
+            // Case 3: A has both children
+        else {
+            B = minimum(A->right);  // Successor
+            yOriginalColor = B->color;
+            C = B->right;
+
+            if (B->p == A) {
+                C->p = B;  // In case C is NIL
+            } else {
+                move(B, B->right);
+                B->right = A->right;
+                B->right->p = B;
+            }
+
+            move(A, B);
+            B->left = A->left;
+            B->left->p = B;
+            B->color = A->color;
+        }
+
+        delete A;  // Free the deleted node
+
+        // If the removed node was black, fix the tree
+        if (yOriginalColor == black) {
+            deleteRecolor(C);
+        }
+
+    }
+
+    ~ConcreteAuctionTree(){
+        deleteTree(root);
+        delete NIL;
     }
 };
 
