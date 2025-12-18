@@ -107,14 +107,13 @@ private:
         SNode** forward;
         int nodeL;
 
-        SNode(int lev, int playerID, int score) {
-            this->playID = playerID;
-            this->score = score;
-            this->nodeL = lev;
-            forward = new SNode*[lev + 1];
-            for (int j = 0; j <= lev; ++j) {
+        SNode(int lev, int playerID, int sco) {
+            playID = playerID;
+            score = sco;
+            nodeL = lev;
+            forward = new SNode[lev + 1];
+            for (int j = 0; j <= lev; ++j)
                 forward[j] = nullptr;
-            }
         }
 
         ~SNode() {
@@ -122,7 +121,7 @@ private:
         }
     };
 
-    static const int MAX_LEVEL = 16;
+    static const int MAX_LEVEL = 20;
     static constexpr double P = 0.5;
 
     SNode* head;
@@ -130,17 +129,22 @@ private:
 
     int randomLevel() {
         int lvl = 0;
-        while ((rand() / (double)RAND_MAX) < P && lvl < MAX_LEVEL) {
-            ++lvl;
-        }
+        while (((double)rand() / RAND_MAX) < P && lvl < MAX_LEVEL)
+            lvl++;
         return lvl;
+    }
+
+    bool comesBefore(int id1, int score1, int id2, int score2) {
+        if (score1 != score2)
+            return score1 > score2;
+        return id1 < id2;
     }
 
 public:
     ConcreteLeaderboard() {
-        srand((unsigned)time(nullptr));
         lev = 0;
-        head = new SNode(MAX_LEVEL, -1, INT_MAX); // dummy head
+        head = new SNode(MAX_LEVEL, -1, INT_MAX);
+        srand(1);
     }
 
     void addScore(int playerID, int sco) override {
@@ -148,10 +152,10 @@ public:
         SNode* curr = head;
 
         for (int j = lev; j >= 0; --j) {
-            while (curr->forward[j] != nullptr &&
-                   (curr->forward[j]->score > sco ||
-                    (curr->forward[j]->score == sco &&
-                     curr->forward[j]->playID < playerID))) {
+            while (curr->forward[j] &&
+                   comesBefore(curr->forward[j]->playID,
+                               curr->forward[j]->score,
+                               playerID, sco)) {
                 curr = curr->forward[j];
             }
             upd[j] = curr;
@@ -159,7 +163,8 @@ public:
 
         int newLevel = randomLevel();
         if (newLevel > lev) {
-            for (int j = lev + 1; j <= newLevel; ++j) upd[j] = head;
+            for (int j = lev + 1; j <= newLevel; ++j)
+                upd[j] = head;
             lev = newLevel;
         }
 
@@ -171,40 +176,49 @@ public:
     }
 
     void removePlayer(int playerID) override {
-        SNode* upd[MAX_LEVEL + 1];
         SNode* curr = head;
+        SNode* target = nullptr;
+
+        while (curr->forward[0]) {
+            if (curr->forward[0]->playID == playerID) {
+                target = curr->forward[0];
+                break;
+            }
+            curr = curr->forward[0];
+        }
+
+        if (!target) return;
+
+        SNode* upd[MAX_LEVEL + 1];
+        curr = head;
 
         for (int j = lev; j >= 0; --j) {
-            while (curr->forward[j] != nullptr &&
-                   curr->forward[j]->playID < playerID) {
+            while (curr->forward[j] && curr->forward[j] != target) {
                 curr = curr->forward[j];
             }
             upd[j] = curr;
         }
 
-        curr = curr->forward[0];
-        if (curr == nullptr || curr->playID != playerID) return;
-
         for (int j = 0; j <= lev; ++j) {
-            if (upd[j]->forward[j] != curr) break;
-            upd[j]->forward[j] = curr->forward[j];
+            if (upd[j]->forward[j] == target)
+                upd[j]->forward[j] = target->forward[j];
         }
-        delete curr;
 
-        while (lev > 0 && head->forward[lev] == nullptr) {
+        delete target;
+
+        while (lev > 0 && head->forward[lev] == nullptr)
             lev--;
-        }
     }
 
     vector<int> getTopN(int n) override {
         vector<int> res;
         SNode* curr = head->forward[0];
-        int count = 0;
-        while (curr != nullptr && count < n) {
+
+        while (curr && n--) {
             res.push_back(curr->playID);
             curr = curr->forward[0];
-            count++;
         }
+
         return res;
     }
 };
