@@ -111,7 +111,7 @@ private:
             playID = playerID;
             score = sco;
             nodeL = lev;
-            forward = new SNode[lev + 1];
+            forward = new SNode*[lev + 1];
             for (int j = 0; j <= lev; ++j)
                 forward[j] = nullptr;
         }
