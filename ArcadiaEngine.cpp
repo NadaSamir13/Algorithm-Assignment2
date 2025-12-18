@@ -223,10 +223,11 @@ private:
         Node* p;
 
         Node(int itemID,int itemPR):id(itemID),price(itemPR),color(red),left(nullptr),
-        right(nullptr),p(nullptr){}
+                                    right(nullptr),p(nullptr){}
     };
     Node* root;
     Node* NIL;
+
     //helper functions
     void rotate_left(Node* A){
         Node* B = A->right;
@@ -273,11 +274,14 @@ private:
         }
         return current;
     }
-    void deleteTree(Node* node){
-        if (node != NIL && node != nullptr){
+    void deleteTree(Node* node) {
+        if (node != NIL && node != nullptr) {
             deleteTree(node->right);
             deleteTree(node->left);
-            delete NIL;
+        }
+        if (node != NIL && node != nullptr) {
+            delete node;
+
         }
     }
     void insertRecolor(Node* A){
@@ -327,6 +331,14 @@ private:
             }
         }
         root->color = black;
+    }
+    bool lessThan(Node* a, Node* b) {
+        if (a->price != b->price) {
+            return a->price < b->price;
+        } else {
+            // If prices are equal, compare IDs to determine order
+            return a->id < b->id;
+        }
     }
     void move(Node* a, Node* b){
         if (a->p == NIL) {
@@ -378,7 +390,7 @@ private:
                     A = root;  // Terminate the loop
                 }
             } else {
-                // A is right child)
+                // A is right child
                 Node* B = A->p->left;  // Sibling
 
                 // Case 1: Sibling is RED
@@ -415,7 +427,7 @@ private:
         // Ensure A is black
         A->color = black;
     }
-    
+
 public:
     ConcreteAuctionTree() {
         // TODO: Initialize your Red-Black Tree
@@ -440,7 +452,7 @@ public:
 
         while (A != NIL){
             B = A;
-            if (C->id < A->id){
+            if (lessThan(C, A)){
                 A = A->left;
             }else{
                 A = A->right;
@@ -450,7 +462,7 @@ public:
         C->p = B;
         if (B == NIL){
             root = C;
-        }else if(C->id < B->id){
+        }else if(lessThan(C,B)){
             B->left = C;
         }else{
             B->right = C;
@@ -509,7 +521,7 @@ public:
 
     }
 
-    ~ConcreteAuctionTree(){
+   ~ConcreteAuctionTree(){
         deleteTree(root);
         delete NIL;
     }
