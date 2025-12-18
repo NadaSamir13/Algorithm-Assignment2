@@ -318,39 +318,208 @@ long long InventorySystem::countStringPossibilities(string s) {
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
 
-bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
+bool WorldNavigator::pathExists(int n, vector<vector<int>> &edges, int source, int dest)
+{
     // TODO: Implement path existence check using BFS or DFS
     // edges are bidirectional
+
+    if (source == dest)
+        return true;
+    vector<vector<int>> adj(n);
+    for (auto &edge : edges)
+    {
+        int u = edge[0];
+        int v = edge[1];
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    vector<bool> visited(n, false);
+    queue<int> q;
+    q.push(source);
+    visited[source] = true;
+
+    while (!q.empty())
+    {
+        int current = q.front();
+        q.pop();
+        for (int neighbor : adj[current])
+        {
+            if (!visited[neighbor])
+            {
+                if (neighbor == dest)
+                    return true;
+
+                visited[neighbor] = true;
+                q.push(neighbor);
+            }
+        }
+    }
+
     return false;
 }
 
 long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
-                                       vector<vector<int>>& roadData) {
+                                       vector<vector<int>> &roadData)
+{
     // TODO: Implement Minimum Spanning Tree (Kruskal's or Prim's)
     // roadData[i] = {u, v, goldCost, silverCost}
     // Total cost = goldCost * goldRate + silverCost * silverRate
     // Return -1 if graph cannot be fully connected
-    return -1;
+
+    struct Edge
+    {
+        int u, v;
+        long long cost;
+    };
+    vector<Edge> edges;
+    for (int i = 0; i < m; ++i)
+    {
+        long long total = (long long)roadData[i][2] * goldRate + (long long)roadData[i][3] * silverRate;
+        edges.push_back({roadData[i][0], roadData[i][1], total});
+    }
+
+    sort(edges.begin(), edges.end(), [](const Edge &a, const Edge &b)
+         { return a.cost < b.cost; });
+
+    vector<int> parent(n);
+    for (int i = 0; i < n; ++i)
+        parent[i] = i;
+
+    auto find = [&](auto self, int i) -> int
+    {
+        return (parent[i] == i) ? i : (parent[i] = self(self, parent[i]));
+    };
+
+    long long minTotalCost = 0;
+    int edgesIncluded = 0;
+
+    for (const auto &edge : edges)
+    {
+        int rootU = find(find, edge.u);
+        int rootV = find(find, edge.v);
+
+        if (rootU != rootV)
+        {
+            parent[rootU] = rootV;
+            minTotalCost += edge.cost;
+            edgesIncluded++;
+        }
+    }
+
+    if (n > 1 && edgesIncluded != n - 1)
+        return -1;
+    if (n <= 1)
+        return 0;
+
+    return minTotalCost;
 }
 
-string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
+string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
+{
     // TODO: Implement All-Pairs Shortest Path (Floyd-Warshall)
     // Sum all shortest distances between unique pairs (i < j)
     // Return the sum as a binary string
     // Hint: Handle large numbers carefully
-    return "0";
+
+    const long long INF = 1e15;
+
+    vector<vector<long long>> dist(n, vector<long long>(n, INF));
+
+    for (int i = 0; i < n; i++)
+    {
+        dist[i][i] = 0;
+    }
+
+    for (const auto &road : roads)
+    {
+        int u = road[0];
+        int v = road[1];
+        long long w = road[2];
+
+        if (w < dist[u][v])
+        {
+            dist[u][v] = dist[v][u] = w;
+        }
+    }
+
+    for (int k = 0; k < n; k++)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (dist[i][k] != INF && dist[k][j] != INF)
+                {
+                    if (dist[i][k] + dist[k][j] < dist[i][j])
+                    {
+                        dist[i][j] = dist[i][k] + dist[k][j];
+                    }
+                }
+            }
+        }
+    }
+
+    long long totalSum = 0;
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i + 1; j < n; j++)
+        {
+            if (dist[i][j] != INF)
+            {
+                totalSum += dist[i][j];
+            }
+        }
+    }
+
+    if (totalSum == 0)
+        return "0";
+
+    string binary = "";
+    while (totalSum > 0)
+    {
+        binary += (totalSum % 2 == 0 ? '0' : '1');
+        totalSum /= 2;
+    }
+
+    reverse(binary.begin(), binary.end());
+
+    return binary;
 }
 
 // =========================================================
 // PART D: SERVER KERNEL (Greedy)
 // =========================================================
 
-int ServerKernel::minIntervals(vector<char>& tasks, int n) {
+int ServerKernel::minIntervals(vector<char> &tasks, int n)
+{
     // TODO: Implement task scheduler with cooling time
     // Same task must wait 'n' intervals before running again
     // Return minimum total intervals needed (including idle time)
     // Hint: Use greedy approach with frequency counting
-    return 0;
+
+    vector<int> freq(26, 0);
+    for (char t : tasks)
+    {
+        freq[t - 'A']++;
+    }
+
+    sort(freq.rbegin(), freq.rend());
+
+    int maxFreq = freq[0];
+
+    int countMaxFreq = 0;
+    for (int f : freq)
+    {
+        if (f == maxFreq)
+            countMaxFreq++;
+        else
+            break;
+    }
+
+    int minTime = (maxFreq - 1) * (n + 1) + countMaxFreq;
+
+    return max(minTime, (int)tasks.size());
 }
 
 // =========================================================
